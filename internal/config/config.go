@@ -1,0 +1,46 @@
+package config
+
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	User     string
+	Password string
+	DBName   string
+	Host     string
+	Port     string
+	SSLMode  string
+}
+
+// postgres://admin:postgres@localhost:5432/postgres_db?sslmode=disable
+
+func LoadEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Load() (*Config, error) {
+	cfg := &Config{
+		User:     getEnv("DB_USERNAME"),
+		Password: getEnv("PASSWORD"),
+		DBName:   getEnv("DB"),
+		Host:     getEnv("HOST"),
+		Port:     getEnv("PORT"),
+		SSLMode:  getEnv("SSLMODE"),
+	}
+
+	return cfg, nil
+}
+
+func getEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return ""
+	}
+	return value
+}
