@@ -1,4 +1,4 @@
-package category
+package categoryHandler
 
 import (
 	"net/http"
@@ -41,5 +41,5 @@ func (categoryController *CategoryController) CreateCategory(c *gin.Context) {
 }
 
 func (categoryController *CategoryController) DeleteCategory(c *gin.Context) {
-	
+
 }

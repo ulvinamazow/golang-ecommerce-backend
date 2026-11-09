@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -17,11 +18,14 @@ type Config struct {
 
 // postgres://admin:postgres@localhost:5432/postgres_db?sslmode=disable
 
-func LoadEnv() {
+func LoadEnv() error {
 	err := godotenv.Load()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		return err
 	}
+
+	return nil
 }
 
 func Load() (*Config, error) {

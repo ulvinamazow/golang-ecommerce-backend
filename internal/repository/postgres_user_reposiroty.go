@@ -74,7 +74,7 @@ func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("The user could not be retrieved using the email: %w", err)
+		return nil, fmt.Errorf("user could not be retrieved using the email: %w", err)
 	}
 
 	return &user, nil

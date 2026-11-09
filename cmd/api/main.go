@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
+
 	config.LoadEnv()
 
 	r := gin.New()
@@ -43,6 +46,10 @@ func main() {
 				"message": "hello",
 			})
 		})
+	}
+
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("server can not started: %v", err)
 	}
 
 }
