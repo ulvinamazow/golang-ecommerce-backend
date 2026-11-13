@@ -8,16 +8,17 @@ import (
 
 	"github.com/ulvinamazow/go-backend-project/internal/auth"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	userrepository "github.com/ulvinamazow/go-backend-project/internal/repository/userRepository"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type authServiceImpl struct {
-	userRepo repository.UserRepository
+	userRepo userrepository.UserRepository
 	tokenCfg auth.TokenConfig
 }
 
 func NewAuthService(
-	userRepo repository.UserRepository,
+	userRepo userrepository.UserRepository,
 	tokenCfg auth.TokenConfig,
 ) *authServiceImpl {
 	return &authServiceImpl{

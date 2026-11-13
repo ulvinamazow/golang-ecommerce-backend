@@ -1,4 +1,4 @@
-package repository
+package userrepository
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
+	"github.com/ulvinamazow/go-backend-project/internal/repository"
 )
 
 type postgresUserRepository struct {
@@ -50,9 +51,9 @@ func (r *postgresUserRepository) GetByID(ctx context.Context, id int64) (*model.
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, repository.ErrNotFound
 		}
-		return nil, fmt.Errorf("istifadəçi gətirilə bilmədi: %w", err)
+		return nil, fmt.Errorf("user could not be retrieved: %w", err)
 	}
 
 	return &user, nil
@@ -72,7 +73,7 @@ func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, repository.ErrNotFound
 		}
 		return nil, fmt.Errorf("user could not be retrieved using the email: %w", err)
 	}
@@ -93,9 +94,9 @@ func (r *postgresUserRepository) Update(ctx context.Context, user *model.User) e
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrNotFound
+			return repository.ErrNotFound
 		}
-		return fmt.Errorf("istifadəçi yenilənə bilmədi: %w", err)
+		return fmt.Errorf("user can not updated: %w", err)
 	}
 
 	return nil
@@ -106,13 +107,13 @@ func (r *postgresUserRepository) Delete(ctx context.Context, id int64) error {
 
 	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("istifadəçi silinə bilmədi: %w", err)
+		return fmt.Errorf("user can not deleted: %w", err)
 	}
 
 	rowsAffected := result.RowsAffected()
 
 	if rowsAffected == 0 {
-		return ErrNotFound
+		return repository.ErrNotFound
 	}
 
 	return nil

@@ -8,14 +8,15 @@ import (
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	productrepository "github.com/ulvinamazow/go-backend-project/internal/repository/productRepository"
 	"github.com/ulvinamazow/go-backend-project/internal/service"
 )
 
 type productServiceImpl struct {
-	productRepo repository.ProductRepository
+	productRepo productrepository.ProductRepository
 }
 
-func NewProductService(productRepo repository.ProductRepository) ProductService {
+func NewProductService(productRepo productrepository.ProductRepository) ProductService {
 	return &productServiceImpl{productRepo: productRepo}
 }
 

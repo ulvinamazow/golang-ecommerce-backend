@@ -8,15 +8,16 @@ import (
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	userrepository "github.com/ulvinamazow/go-backend-project/internal/repository/userRepository"
 	"github.com/ulvinamazow/go-backend-project/internal/service"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type userServiceImpl struct {
-	userRepo repository.UserRepository
+	userRepo userrepository.UserRepository
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(userRepo userrepository.UserRepository) UserService {
 	return &userServiceImpl{userRepo: userRepo}
 }
 
@@ -64,7 +65,7 @@ func (s *userServiceImpl) GetByID(ctx context.Context, id int64) (*model.User, e
 func (s *userServiceImpl) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if email == "" {
-		return nil, fmt.Errorf("%w: email boş ola bilməz", service.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: email can not be empty", service.ErrInvalidInput)
 	}
 	return s.userRepo.GetByEmail(ctx, email)
 }

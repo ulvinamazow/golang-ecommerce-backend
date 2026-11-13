@@ -1,4 +1,4 @@
-package repository
+package categoryrepository
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
+	"github.com/ulvinamazow/go-backend-project/internal/repository"
 )
 
 type postgresCategoryRepository struct {
@@ -43,7 +44,7 @@ func (r *postgresCategoryRepository) GetByID(ctx context.Context, id int64) (*mo
 		Scan(&c.ID, &c.Name, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, repository.ErrNotFound
 		}
 		return nil, fmt.Errorf("category could not be retrieved: %w", err)
 	}
@@ -61,7 +62,7 @@ func (r *postgresCategoryRepository) Update(ctx context.Context, category *model
 		Scan(&category.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrNotFound
+			return repository.ErrNotFound
 		}
 		return fmt.Errorf("category could not be updated: %w", err)
 	}
@@ -75,7 +76,7 @@ func (r *postgresCategoryRepository) Delete(ctx context.Context, id int64) error
 		return fmt.Errorf("category could not be deleted: %w", err)
 	}
 	if result.RowsAffected() == 0 {
-		return ErrNotFound
+		return repository.ErrNotFound
 	}
 	return nil
 }

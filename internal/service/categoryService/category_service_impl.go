@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
-	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	categoryrepository "github.com/ulvinamazow/go-backend-project/internal/repository/categoryRepository"
 	"github.com/ulvinamazow/go-backend-project/internal/service"
 )
 
 type categoryServiceImpl struct {
-	categoryRepo repository.CategoryRepository
+	categoryRepo categoryrepository.CategoryRepository
 }
 
-func NewCategoryService(categoryRepo repository.CategoryRepository) CategoryService {
+func NewCategoryService(categoryRepo categoryrepository.CategoryRepository) CategoryService {
 	return &categoryServiceImpl{categoryRepo: categoryRepo}
 }
 
