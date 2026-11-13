@@ -1,4 +1,4 @@
-package service
+package productservice
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	"github.com/ulvinamazow/go-backend-project/internal/service"
 )
 
 type productServiceImpl struct {
@@ -25,7 +26,7 @@ func (productserviceImpl *productServiceImpl) Create(ctx context.Context, produc
 
 	if _, err := productserviceImpl.productRepo.GetByID(ctx, product.CategoryID); err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			return ErrCategoryNotFound
+			return service.ErrCategoryNotFound
 		}
 		return err
 	}
@@ -35,7 +36,7 @@ func (productserviceImpl *productServiceImpl) Create(ctx context.Context, produc
 
 func (productserviceImpl *productServiceImpl) GetByID(ctx context.Context, id int64) (*model.Product, error) {
 	if id != 0 {
-		return &model.Product{}, fmt.Errorf("%w: you cannot determine the id", ErrInvalidInput)
+		return &model.Product{}, fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
 	}
 
 	product, err := productserviceImpl.productRepo.GetByID(ctx, id)
@@ -59,7 +60,7 @@ func (productserviceImpl *productServiceImpl) Update(ctx context.Context, produc
 }
 func (productserviceImpl *productServiceImpl) Delete(ctx context.Context, id int64) error {
 	if id != 0 {
-		return ErrInvalidInput
+		return service.ErrInvalidInput
 	}
 
 	err := productserviceImpl.productRepo.Delete(ctx, id)
@@ -97,7 +98,7 @@ func (productserviceImpl *productServiceImpl) ListByCategory(ctx context.Context
 	}
 
 	if categoryID == 0 {
-		return nil, ErrCategoryNotFound
+		return nil, service.ErrCategoryNotFound
 	}
 
 	products, err := productserviceImpl.productRepo.ListByCategory(ctx, categoryID, limit, offset)
@@ -111,27 +112,27 @@ func (productserviceImpl *productServiceImpl) ListByCategory(ctx context.Context
 
 func validateService(product *model.Product) error {
 	if product.ID != 0 {
-		return fmt.Errorf("%w: you cannot determine the id", ErrInvalidInput)
+		return fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
 	}
 
 	if product == nil {
-		return fmt.Errorf("%w: product can not be empty", ErrInvalidInput)
+		return fmt.Errorf("%w: product can not be empty", service.ErrInvalidInput)
 	}
 
 	if strings.TrimSpace(product.Name) == "" {
-		return fmt.Errorf("%w: name can not be empty", ErrInvalidInput)
+		return fmt.Errorf("%w: name can not be empty", service.ErrInvalidInput)
 	}
 
 	if len(product.Name) < 2 && len(product.Name) > 70 {
-		return fmt.Errorf("%w: name cannot be too long or too short", ErrInvalidInput)
+		return fmt.Errorf("%w: name cannot be too long or too short", service.ErrInvalidInput)
 	}
 
 	if product.Price <= 0 {
-		return fmt.Errorf("%w: The price must be greater than 0", ErrInvalidInput)
+		return fmt.Errorf("%w: The price must be greater than 0", service.ErrInvalidInput)
 	}
 
 	if len(strings.TrimSpace(product.Description)) > 500 {
-		return fmt.Errorf("%w: description is very long", ErrInvalidInput)
+		return fmt.Errorf("%w: description is very long", service.ErrInvalidInput)
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package service
+package categoryservice
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	"github.com/ulvinamazow/go-backend-project/internal/service"
 )
 
 type categoryServiceImpl struct {
@@ -22,7 +23,7 @@ func (categoryserviceImpl *categoryServiceImpl) Create(ctx context.Context, cate
 	err := validateCategory(category)
 
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidInput, err)
+		return fmt.Errorf("%w: %w", service.ErrInvalidInput, err)
 	}
 
 	category.CreatedAt = time.Now()
@@ -36,7 +37,7 @@ func (categoryserviceImpl *categoryServiceImpl) Create(ctx context.Context, cate
 
 func (categoryserviceImpl *categoryServiceImpl) GetByID(ctx context.Context, id int64) (*model.Category, error) {
 	if id <= 0 {
-		return &model.Category{}, fmt.Errorf("%w: You cannot determine the id", ErrInvalidInput)
+		return &model.Category{}, fmt.Errorf("%w: You cannot determine the id", service.ErrInvalidInput)
 	}
 
 	category, err := categoryserviceImpl.categoryRepo.GetByID(ctx, id)
@@ -63,7 +64,7 @@ func (categoryserviceImpl *categoryServiceImpl) Update(ctx context.Context, cate
 
 func (categoryserviceImpl *categoryServiceImpl) Delete(ctx context.Context, id int64) error {
 	if id <= 0 {
-		return fmt.Errorf("%w: You cannot determine the id", ErrInvalidInput)
+		return fmt.Errorf("%w: You cannot determine the id", service.ErrInvalidInput)
 	}
 
 	err := categoryserviceImpl.categoryRepo.Delete(ctx, id)
@@ -93,15 +94,15 @@ func (categoryserviceImpl *categoryServiceImpl) List(ctx context.Context, limit,
 
 func validateCategory(category *model.Category) error {
 	if strings.TrimSpace(category.Name) == "" {
-		return fmt.Errorf("%w: category name can not be empty", ErrInvalidInput)
+		return fmt.Errorf("%w: category name can not be empty", service.ErrInvalidInput)
 	}
 
 	if len(category.Name) < 2 && len(category.Name) > 30 {
-		return fmt.Errorf("%w: category name is too long or too short", ErrInvalidInput)
+		return fmt.Errorf("%w: category name is too long or too short", service.ErrInvalidInput)
 	}
 
 	if category.ID != 0 {
-		return fmt.Errorf("%w: you cannot determine the id", ErrInvalidInput)
+		return fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
 	}
 
 	return nil

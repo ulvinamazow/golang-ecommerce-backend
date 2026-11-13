@@ -1,4 +1,4 @@
-package service
+package authservice
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func (authserviceImpl *authServiceImpl) Login(ctx context.Context, email, passwo
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(user.PasswordHash),
+		[]byte(user.Password),
 		[]byte(password),
 	); err != nil {
 		return "", ErrInvalidCredentials

@@ -5,14 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
-	"github.com/ulvinamazow/go-backend-project/internal/service"
+	categoryservice "github.com/ulvinamazow/go-backend-project/internal/service/categoryService"
 )
 
 type CategoryController struct {
-	categoryService service.CategoryService
+	categoryService categoryservice.CategoryService
 }
 
-func NewCategoryController(categoryService service.CategoryService) *CategoryController {
+func NewCategoryController(categoryService categoryservice.CategoryService) *CategoryController {
 	return &CategoryController{categoryService: categoryService}
 }
 

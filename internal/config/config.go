@@ -16,8 +16,6 @@ type Config struct {
 	SSLMode  string
 }
 
-// postgres://admin:postgres@localhost:5432/postgres_db?sslmode=disable
-
 func LoadEnv() error {
 	err := godotenv.Load()
 	if err != nil {

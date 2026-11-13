@@ -25,7 +25,7 @@ func (r *postgresUserRepository) Create(ctx context.Context, user *model.User) e
 	RETURNING id, created_at, updated_at
 	`
 
-	err := r.db.QueryRow(ctx, query, user.Email, user.PasswordHash).
+	err := r.db.QueryRow(ctx, query, user.Email, user.Password).
 		Scan(&user.Name, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
@@ -46,7 +46,7 @@ func (r *postgresUserRepository) GetByID(ctx context.Context, id int64) (*model.
 	var user model.User
 
 	err := r.db.QueryRow(ctx, query, id).
-		Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -68,7 +68,7 @@ func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (
 	var user model.User
 
 	err := r.db.QueryRow(ctx, query, email).
-		Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -88,7 +88,7 @@ func (r *postgresUserRepository) Update(ctx context.Context, user *model.User) e
 		RETURNING updated_at
 	`
 
-	err := r.db.QueryRow(ctx, query, user.Email, user.PasswordHash, user.ID).
+	err := r.db.QueryRow(ctx, query, user.Email, user.Password, user.ID).
 		Scan(&user.UpdatedAt)
 
 	if err != nil {
@@ -138,7 +138,7 @@ func (r *postgresUserRepository) List(ctx context.Context, limit, offset int) ([
 
 	for rows.Next() {
 		var u model.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Password, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("Error reading user array: %w", err)
 		}
 		users = append(users, &u)
