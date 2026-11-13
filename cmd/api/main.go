@@ -2,17 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ulvinamazow/go-backend-project/internal/auth"
 	"github.com/ulvinamazow/go-backend-project/internal/config"
-	"github.com/ulvinamazow/go-backend-project/internal/database"
-	"github.com/ulvinamazow/go-backend-project/internal/middleware"
-	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	userrepository "github.com/ulvinamazow/go-backend-project/internal/repository/userRepository"
 	userservice "github.com/ulvinamazow/go-backend-project/internal/service/userService"
 )
 
@@ -30,20 +26,19 @@ func main() {
 		panic("error")
 	}
 
-	connString := config.GetConnectionPool(ctx, *cfg)
+	connPool, err := config.GetConnectionPool(ctx, *cfg)
 
-	connPool, err := database.Connect(ctx, connString)
 	if err != nil {
-		panic("database error")
+		panic("error")
 	}
-
-	userRepository := repository.NewPostgresUserRepository(connPool)
-
-	userservice.NewUserService(userRepository)
 
 	r := gin.New()
 
 	r.Use(gin.Logger(), gin.Recovery())
+
+	userRepository := userrepository.NewPostgresUserRepository(connPool)
+
+	userservice.NewUserService(userRepository)
 
 	autCfg := auth.TokenConfig{
 		SecretKey: []byte(os.Getenv("JWT_SECRET_KEY")),
@@ -61,22 +56,5 @@ func main() {
 		}
 
 	*/
-	protected := r.Group("api/auth")
-
-	protected.Use(middleware.AuthMiddleware(autCfg))
-	{
-		protected.GET("/", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "hello",
-			})
-		})
-	}
-
-	if err := r.Run(":8080"); err != nil {
-		log.Fatalf("server can not started: %v", err)
-	}
-
-	protected.GET("/login", func(ctx *gin.Context) {
-	})
 
 }

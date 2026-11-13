@@ -3,9 +3,11 @@ package config
 import (
 	"context"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetConnectionPool(ctx context.Context, config Config) /**pgxpool.Pool*/ string /*, error*/ {
+func GetConnectionPool(ctx context.Context, config Config) (*pgxpool.Pool, error) {
 	connString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		config.User,
@@ -16,12 +18,10 @@ func GetConnectionPool(ctx context.Context, config Config) /**pgxpool.Pool*/ str
 		config.SSLMode,
 	)
 
-	/*
-		pool, err := pgxpool.New(ctx, connString)
-		if err != nil {
-			return nil, fmt.Errorf("Connecting pool can not created: %w", err)
-		}
-	*/
+	pool, err := pgxpool.New(ctx, connString)
+	if err != nil {
+		return nil, fmt.Errorf("Connecting pool can not created: %w", err)
+	}
 
-	return connString //, nil
+	return nil, fmt.Errorf("connection string: %s", connString)
 }

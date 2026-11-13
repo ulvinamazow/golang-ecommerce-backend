@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	categoryrepository "github.com/ulvinamazow/go-backend-project/internal/repository/categoryRepository"
@@ -25,10 +24,6 @@ func (categoryserviceImpl *categoryServiceImpl) Create(ctx context.Context, cate
 	if err != nil {
 		return fmt.Errorf("%w: %w", service.ErrInvalidInput, err)
 	}
-
-	category.CreatedAt = time.Now()
-
-	category.UpdatedAt = time.Now()
 
 	categoryserviceImpl.categoryRepo.Create(ctx, category)
 
