@@ -35,7 +35,7 @@ func (s *userServiceImpl) Create(ctx context.Context, user *model.User) error {
 
 	user.Password = hashedPassword
 
-	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	user.Email = strings.TrimSpace(user.Email)
 
 	existing, err := s.userRepo.GetByEmail(ctx, user.Email)
 
@@ -84,7 +84,7 @@ func (s *userServiceImpl) Update(ctx context.Context, user *model.User) error {
 
 func (s *userServiceImpl) Delete(ctx context.Context, id int64) error {
 	if id <= 0 {
-		return fmt.Errorf("%w: the id ,ust be positive", service.ErrInvalidInput)
+		return fmt.Errorf("%w: the id must be positive", service.ErrInvalidInput)
 	}
 	return s.userRepo.Delete(ctx, id)
 }
@@ -99,7 +99,6 @@ func (s *userServiceImpl) List(ctx context.Context, limit, offset int) ([]*model
 	return s.userRepo.List(ctx, limit, offset)
 }
 
-// validateUser biznes səviyyəsində giriş yoxlaması aparır.
 func validateUser(user *model.User) error {
 	if user == nil {
 		return fmt.Errorf("%w: user can not be empty", service.ErrInvalidInput)

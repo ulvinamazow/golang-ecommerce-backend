@@ -2,10 +2,16 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ulvinamazow/go-backend-project/internal/auth"
+)
+
+const (
+	ContextUserIDKey = "user_id"
+	ContextRoleKey   = "role"
 )
 
 func AuthMiddleware(cfg auth.TokenConfig) gin.HandlerFunc {
@@ -45,8 +51,16 @@ func AuthMiddleware(cfg auth.TokenConfig) gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set("user_id", claims.Subject)
-		ctx.Set("role", claims.Role)
+		userID, err := strconv.ParseInt(claims.Subject, 10, 64)
+		if err != nil || userID <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "token is invalid",
+			})
+			return
+		}
+
+		ctx.Set(ContextKeyUserID, userID)
+		ctx.Set(ContextKeyRole, claims.Role)
 
 		ctx.Next()
 	}

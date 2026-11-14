@@ -1,4 +1,4 @@
-package categoryHandler
+package categoryhandler
 
 import (
 	"net/http"
@@ -10,15 +10,15 @@ import (
 	categoryservice "github.com/ulvinamazow/go-backend-project/internal/service/categoryService"
 )
 
-type CategoryController struct {
+type CategoryHandler struct {
 	categoryService categoryservice.CategoryService
 }
 
-func NewCategoryController(categoryService categoryservice.CategoryService) *CategoryController {
-	return &CategoryController{categoryService: categoryService}
+func NewCategoryController(categoryService categoryservice.CategoryService) *CategoryHandler {
+	return &CategoryHandler{categoryService: categoryService}
 }
 
-func (categoryController *CategoryController) CreateCategory(c *gin.Context) {
+func (categoryHandler *CategoryHandler) CreateCategory(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -33,7 +33,7 @@ func (categoryController *CategoryController) CreateCategory(c *gin.Context) {
 		Name: req.Name,
 	}
 
-	if err := categoryController.categoryService.Create(c.Request.Context(), category); err != nil {
+	if err := categoryHandler.categoryService.Create(c.Request.Context(), category); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -41,7 +41,7 @@ func (categoryController *CategoryController) CreateCategory(c *gin.Context) {
 	c.JSON(http.StatusCreated, category)
 }
 
-func (categoryController *CategoryController) DeleteCategory(c *gin.Context) {
+func (categoryHandler *CategoryHandler) DeleteCategory(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,7 +57,7 @@ func (categoryController *CategoryController) DeleteCategory(c *gin.Context) {
 		return
 	}
 
-	if err := categoryController.categoryService.Delete(c.Request.Context(), int64(productID), int64(userID)); err != nil {
+	if err := categoryHandler.categoryService.Delete(c.Request.Context(), int64(productID), int64(userID)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "category can not deleted"})
 		return
 	}
@@ -65,7 +65,7 @@ func (categoryController *CategoryController) DeleteCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "category deleted successfully"})
 }
 
-func (categoryController *CategoryController) UpdateCategory(c *gin.Context) {
+func (categoryHandler *CategoryHandler) UpdateCategory(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,7 +85,7 @@ func (categoryController *CategoryController) UpdateCategory(c *gin.Context) {
 		Description: req.Description,
 	}
 
-	if err := categoryController.categoryService.Update(c.Request.Context(), category); err != nil {
+	if err := categoryHandler.categoryService.Update(c.Request.Context(), category); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "category can not updated"})
 		return
 	}
@@ -93,7 +93,7 @@ func (categoryController *CategoryController) UpdateCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "category updated successfully"})
 }
 
-func (categoryController *CategoryController) GetCategoryByID(c *gin.Context) {
+func (categoryHandler *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -103,7 +103,7 @@ func (categoryController *CategoryController) GetCategoryByID(c *gin.Context) {
 
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	category, err := categoryController.categoryService.GetByID(c.Request.Context(), int64(id))
+	category, err := categoryHandler.categoryService.GetByID(c.Request.Context(), int64(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "category can not retrieved"})
 		return
@@ -112,7 +112,7 @@ func (categoryController *CategoryController) GetCategoryByID(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
-func (categoryController *CategoryController) ListCategories(c *gin.Context) {
+func (categoryHandler *CategoryHandler) ListCategories(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.Param("limit"))
 	offset, _ := strconv.Atoi(c.Param("offset"))
 
@@ -123,7 +123,7 @@ func (categoryController *CategoryController) ListCategories(c *gin.Context) {
 		return
 	}
 
-	categories, err := categoryController.categoryService.List(c.Request.Context(), limit, offset)
+	categories, err := categoryHandler.categoryService.List(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "categories can not retrieved"})
 		return

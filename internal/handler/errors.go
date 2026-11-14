@@ -3,18 +3,15 @@ package handler
 import "errors"
 
 var (
-	ErrInvalidMethod = errors.New("The method is incorrect")
+	ErrInvalidInput = errors.New("invalid input")
+	ErrUnauthorized = errors.New("unauthorized")
+	ErrForbidden    = errors.New("forbidden")
+	ErrNotFound     = errors.New("not found")
+	ErrInternal     = errors.New("internal server error")
+)
 
-	ErrUnauthorized = errors.New("Status unauthorized")
-
-	ErrForbidden = errors.New("Status forbidden")
-
-	ErrInvalidInput = errors.New("Invalid input")
-
-	StatusCreated = errors.New("Status created")
-
-	StatusDeleted = errors.New("Status deleted")
-
-	
-	
+const (
+	MsgCreated = "product created"
+	MsgUpdated = "product updated"
+	MsgDeleted = "product deleted"
 )
