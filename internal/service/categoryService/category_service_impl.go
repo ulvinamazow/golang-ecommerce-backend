@@ -57,14 +57,21 @@ func (categoryserviceImpl *categoryServiceImpl) Update(ctx context.Context, cate
 	return nil
 }
 
-func (categoryserviceImpl *categoryServiceImpl) Delete(ctx context.Context, id int64) error {
-	if id <= 0 {
+func (categoryserviceImpl *categoryServiceImpl) Delete(ctx context.Context, categoryID, userID int64) error {
+	if categoryID <= 0 {
 		return fmt.Errorf("%w: You cannot determine the id", service.ErrInvalidInput)
 	}
 
-	err := categoryserviceImpl.categoryRepo.Delete(ctx, id)
-
+	category, err := categoryserviceImpl.categoryRepo.GetByID(ctx, categoryID)
 	if err != nil {
+		return err
+	}
+
+	if category.Created_by != int(userID) {
+		return fmt.Errorf("authorization error")
+	}
+
+	if err = categoryserviceImpl.categoryRepo.Delete(ctx, categoryID); err != nil {
 		return err
 	}
 
@@ -94,10 +101,6 @@ func validateCategory(category *model.Category) error {
 
 	if len(category.Name) < 2 && len(category.Name) > 30 {
 		return fmt.Errorf("%w: category name is too long or too short", service.ErrInvalidInput)
-	}
-
-	if category.ID != 0 {
-		return fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
 	}
 
 	return nil

@@ -23,5 +23,5 @@ func GetConnectionPool(ctx context.Context, config Config) (*pgxpool.Pool, error
 		return nil, fmt.Errorf("Connecting pool can not created: %w", err)
 	}
 
-	return nil, fmt.Errorf("connection string: %s", connString)
+	return pool, nil
 }

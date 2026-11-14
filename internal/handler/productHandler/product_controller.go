@@ -1,13 +1,13 @@
 package productHandler
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	productrequestdto "github.com/ulvinamazow/go-backend-project/internal/DTO/request/productRequestDTO"
 	productresponsedto "github.com/ulvinamazow/go-backend-project/internal/DTO/response/productResponseDTO"
+	"github.com/ulvinamazow/go-backend-project/internal/handler"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	productservice "github.com/ulvinamazow/go-backend-project/internal/service/productService"
 )
@@ -20,41 +20,63 @@ func NewProductController(productService productservice.ProductService) *Product
 	return &ProductController{productService: productService}
 }
 
-func (productcontroller *ProductController) CreateProduct(
-	c *gin.Context,
-	productRequest *productrequestdto.ProductRequestDTO) {
+func (productController *ProductController) CreateProduct(c *gin.Context) {
+	var req productrequestdto.ProductRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
+	}
 
-	id, err := strconv.Atoi(c.GetHeader("user_id"))
+	userID, err := getUserID(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+		c.JSON(http.StatusForbidden, gin.H{"error": handler.ErrForbidden})
 		return
 	}
 
 	product := &model.Product{
-		ID:          int64(id),
-		Name:        productRequest.Name,
-		Description: productRequest.Description,
-		Price:       productRequest.Price,
+		Name:        req.Name,
+		Description: req.Description,
+		Price:       req.Price,
+		CreatedBy:   userID,
 	}
 
-	if err := productcontroller.productService.Create(c.Request.Context(), product); err != nil {
+	if err := productController.productService.Create(c.Request.Context(), product); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid input",
+			"error": handler.ErrInvalidInput,
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "product created",
+		"message": handler.StatusCreated,
 	})
-	return
 }
 
-func (pc *ProductController) GetProductByID(ctx context.Context, id int64) (*productresponsedto.ProductResponseDTO, error) {
-	product, err := pc.productService.GetByID(ctx, id)
+func (productController *ProductController) GetProductByID(c *gin.Context) (*productresponsedto.ProductResponseDTO, error) {
+	// var req productrequestdto.ProductRequestDTO
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"error": "invalid input",
+	// 	})
+	// 	return nil, err
+	// }
 
+	productID, err := getObjectID(c)
 	if err != nil {
-		return nil, err
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return nil, handler.ErrInvalidInput
+	}
+
+	product, err := productController.productService.GetByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return nil, handler.ErrInvalidInput
 	}
 
 	return &productresponsedto.ProductResponseDTO{
@@ -66,48 +88,112 @@ func (pc *ProductController) GetProductByID(ctx context.Context, id int64) (*pro
 	}, nil
 }
 
-func (productcontroller *ProductController) UpdateProduct(c *gin.Context, productRequest *productrequestdto.ProductRequestDTO) *productresponsedto.ProductResponseDTO {
-	id, err := strconv.Atoi(c.GetHeader("user_id"))
+func (productController *ProductController) UpdateProduct(c *gin.Context) {
+	productID, err := getObjectID(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
-		return nil
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
 	}
 
-	product := &model.Product{
-		ID:          productRequest.ID,
-		Name:        productRequest.Name,
-		Description: productRequest.Description,
-		Price:       productRequest.Price,
-		CreatedBy:   int64(id),
-	}
-
-	updatedProduct, err := productcontroller.productService.Update(ctx, product)
+	userID, err := getUserID(c)
 	if err != nil {
-		return nil, err
+		c.JSON(http.StatusForbidden, gin.H{"error": handler.ErrForbidden})
+		return
 	}
 
-	return &productresponsedto.ProductResponseDTO{
-		Name:        updatedProduct.Name,
-		CreatedBy:   updatedProduct.CreatedBy,
-		Description: updatedProduct.Description,
-		Price:       updatedProduct.Price,
-		CategoryID:  updatedProduct.CategoryID,
-	}, nil
+	var req productrequestdto.ProductRequestDTO
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
+	}
+
+	product, err := productController.productService.GetByID(c.Request.Context(), productID)
+	if userID != product.CreatedBy {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": handler.ErrUnauthorized,
+		})
+		return
+	}
+
+	product = &model.Product{
+		ID:          productID,
+		Name:        req.Name,
+		Description: req.Description,
+		Price:       req.Price,
+		CreatedBy:   userID,
+	}
+
+	if err := productController.productService.Update(c.Request.Context(), product); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": handler.StatusCreated,
+	})
+
 }
 
-func (pc *ProductController) DeleteProduct(ctx context.Context, id int64) error {
-	err := pc.productService.Delete(ctx, id)
+func (productController *ProductController) DeleteProduct(c *gin.Context) {
+	productID, err := getObjectID(c)
 	if err != nil {
-		return err
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
 	}
 
-	return nil
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": handler.ErrForbidden})
+		return
+	}
+
+	product, err := productController.productService.GetByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
+	}
+
+	if product.CreatedBy != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": handler.ErrUnauthorized,
+		})
+		return
+	}
+
+	err = productController.productService.Delete(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": handler.ErrInvalidInput,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": handler.StatusDeleted,
+	})
 }
 
-func (pc *ProductController) ListProducts(ctx context.Context, limit, offset int) ([]*productresponsedto.ProductResponseDTO, error) {
-	products, err := pc.productService.List(ctx, limit, offset)
+func (productController *ProductController) ListProducts(c *gin.Context) ([]*productresponsedto.ProductResponseDTO, error) {
+	limitStr := c.DefaultQuery("limit", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, _ := strconv.Atoi(limitStr)
+	offset, _ := strconv.Atoi(offsetStr)
+
+	products, err := productController.productService.List(c.Request.Context(), limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, handler.ErrInvalidInput
 	}
 
 	var productResponses []*productresponsedto.ProductResponseDTO
@@ -124,11 +210,52 @@ func (pc *ProductController) ListProducts(ctx context.Context, limit, offset int
 	return productResponses, nil
 }
 
-func (pc *ProductController) GetProductsByCategoryID(ctx context.Context, categoryID int64) ([]*productresponsedto.ProductResponseDTO, error) {
-	products, err := pc.productService.GetByCategoryID(ctx, categoryID)
+/*
+func (productController *ProductController) GetProductsByCategoryID(c *gin.Context) ([]*productresponsedto.ProductResponseDTO, error) {
+	idStr := c.Param("id")
+	categoryID, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid input",
+		})
+		return nil, err
+	}
+
+	products, err := productController.productService.GetByID(c.Request.Context(), int64(categoryID))
 	if err != nil {
 		return nil, err
 	}
+
+	var productResponses []*productresponsedto.ProductResponseDTO
+	for _, product := range products {
+		productResponse := &productresponsedto.ProductResponseDTO{
+			Name:        products.Name,
+			CreatedBy:   products.CreatedBy,
+			Description: products.Description,
+			Price:       products.Price,
+			CategoryID:  products.CategoryID,
+		}
+		productResponses = append(productResponses, productResponse)
+	}
+	return productResponses, nil
+}
+
+func (productController *ProductController) GetProductsByUserID(c *gin.Context) ([]*productresponsedto.ProductResponseDTO, error) {
+	// userID, err := getUserID(c)
+	// if err != nil {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorization error"})
+	// 	return []*productresponsedto.ProductResponseDTO{}, err
+	// }
+
+	productID, err := getObjectID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return []*productresponsedto.ProductResponseDTO{}, handler.ErrInvalidInput
+	}
+
+	productController.productService.GetByID(c.Request.Context(), productID)
 
 	var productResponses []*productresponsedto.ProductResponseDTO
 	for _, product := range products {
@@ -143,23 +270,26 @@ func (pc *ProductController) GetProductsByCategoryID(ctx context.Context, catego
 	}
 	return productResponses, nil
 }
+*/
 
-func (pc *ProductController) GetProductsByUserID(ctx context.Context, userID int64) ([]*productresponsedto.ProductResponseDTO, error) {
-	products, err := pc.productService.GetByUserID(ctx, userID)
+func getUserID(c *gin.Context) (int64, error) {
+	userIdStr := c.GetHeader("user_id")
+
+	userID, err := strconv.Atoi(userIdStr)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	var productResponses []*productresponsedto.ProductResponseDTO
-	for _, product := range products {
-		productResponse := &productresponsedto.ProductResponseDTO{
-			Name:        product.Name,
-			CreatedBy:   product.CreatedBy,
-			Description: product.Description,
-			Price:       product.Price,
-			CategoryID:  product.CategoryID,
-		}
-		productResponses = append(productResponses, productResponse)
+	return int64(userID), nil
+}
+
+func getObjectID(c *gin.Context) (int64, error) {
+	idStr := c.Param("id")
+
+	objectID, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, err
 	}
-	return productResponses, nil
+
+	return int64(objectID), nil
 }
