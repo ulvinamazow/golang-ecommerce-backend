@@ -29,7 +29,6 @@ func (r *postgresProductRepository) Create(ctx context.Context, product *model.P
 	err := r.db.QueryRow(ctx, query, product.Name, product.Description, product.Price, product.CategoryID).
 		Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
 	if err != nil {
-		// OLD: return myerrors.DBErrProductCreated
 		return repository.MapPgError("create product", err)
 	}
 	return nil
@@ -46,9 +45,9 @@ func (r *postgresProductRepository) GetByID(ctx context.Context, id int64) (*mod
 		Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategoryID, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("product %d: %w: %w", id, apperrors.ErrNotFound, err)
+			return &model.Product{}, fmt.Errorf("product %d: %w: %w", id, apperrors.ErrNotFound, err)
 		}
-		return nil, fmt.Errorf("get product: %w", err)
+		return &model.Product{}, fmt.Errorf("get product: %w", err)
 	}
 	return &p, nil
 }
@@ -92,7 +91,7 @@ func (r *postgresProductRepository) List(ctx context.Context, limit, offset int)
 	`
 	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list products: %w", err)
+		return []*model.Product{}, fmt.Errorf("list products: %w", err)
 	}
 	defer rows.Close()
 
@@ -100,12 +99,12 @@ func (r *postgresProductRepository) List(ctx context.Context, limit, offset int)
 	for rows.Next() {
 		var p model.Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategoryID, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("list products: %w", err)
+			return []*model.Product{}, fmt.Errorf("list products: %w", err)
 		}
 		products = append(products, &p)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("list products: %w", err)
+		return []*model.Product{}, fmt.Errorf("list products: %w", err)
 	}
 	return products, nil
 }
@@ -120,7 +119,7 @@ func (r *postgresProductRepository) ListByCategory(ctx context.Context, category
 	`
 	rows, err := r.db.Query(ctx, query, categoryID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list products by category: %w", err)
+		return []*model.Product{}, fmt.Errorf("list products by category: %w", err)
 	}
 	defer rows.Close()
 
@@ -128,12 +127,12 @@ func (r *postgresProductRepository) ListByCategory(ctx context.Context, category
 	for rows.Next() {
 		var p model.Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategoryID, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("list products by category: %w", err)
+			return []*model.Product{}, fmt.Errorf("list products by category: %w", err)
 		}
 		products = append(products, &p)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("list products by category: %w", err)
+		return []*model.Product{}, fmt.Errorf("list products by category: %w", err)
 	}
 	return products, nil
 }

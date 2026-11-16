@@ -45,9 +45,9 @@ func (r *postgresCategoryRepository) GetByID(ctx context.Context, id int64) (*mo
 		Scan(&c.ID, &c.Name, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("category %d: %w: %w", id, apperrors.ErrNotFound, err)
+			return &model.Category{}, fmt.Errorf("category %d: %w: %w", id, apperrors.ErrNotFound, err)
 		}
-		return nil, fmt.Errorf("get category: %w", err)
+		return &model.Category{}, fmt.Errorf("get category: %w", err)
 	}
 	return &c, nil
 }

@@ -90,7 +90,7 @@ func (categoryserviceImpl *categoryServiceImpl) List(ctx context.Context, limit,
 
 	categories, err := categoryserviceImpl.categoryRepo.List(ctx, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list categories: %w", err)
+		return []*model.Category{}, fmt.Errorf("list categories: %w", err)
 	}
 
 	return categories, nil

@@ -45,8 +45,6 @@ func (userHandler *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "user created",
 	})
-
-	return nil
 }
 
 func (userHandler *UserHandler) UpdateUser(c *gin.Context) error {

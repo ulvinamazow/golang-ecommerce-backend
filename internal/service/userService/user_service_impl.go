@@ -56,12 +56,12 @@ func (s *userServiceImpl) Create(ctx context.Context, user *model.User) error {
 
 func (s *userServiceImpl) GetByID(ctx context.Context, id int64) (*model.User, error) {
 	if id <= 0 {
-		return nil, fmt.Errorf("get user: %w", service.ErrInvalidInput)
+		return &model.User{}, fmt.Errorf("get user: %w", service.ErrInvalidInput)
 	}
 
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("get user: %w", err)
+		return &model.User{}, fmt.Errorf("get user: %w", err)
 	}
 	return user, nil
 }
@@ -69,11 +69,11 @@ func (s *userServiceImpl) GetByID(ctx context.Context, id int64) (*model.User, e
 func (s *userServiceImpl) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if email == "" {
-		return nil, fmt.Errorf("get user by email: %w", service.ErrInvalidInput)
+		return &model.User{}, fmt.Errorf("get user by email: %w", service.ErrInvalidInput)
 	}
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		return nil, fmt.Errorf("get user by email: %w", err)
+		return &model.User{}, fmt.Errorf("get user by email: %w", err)
 	}
 	return user, nil
 }
@@ -111,7 +111,7 @@ func (s *userServiceImpl) List(ctx context.Context, limit, offset int) ([]*model
 	}
 	users, err := s.userRepo.List(ctx, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list users: %w", err)
+		return []*model.User{}, fmt.Errorf("list users: %w", err)
 	}
 	return users, nil
 }

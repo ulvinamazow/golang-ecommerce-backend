@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	myerrors "github.com/ulvinamazow/go-backend-project/internal/errors"
+	apperrors "github.com/ulvinamazow/go-backend-project/internal/errors"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
 )
@@ -24,18 +24,17 @@ func (r *postgresUserRepository) Create(ctx context.Context, user *model.User) e
 	query := `
 	INSERT INTO users (name, email, password_hash, created_at, updated_at)
 	VALUES ($1, $2, $3, NOW(), NOW())
-	RETURNING id, name, created_at, updated_at
+	RETURNING id, email, name, created_at, updated_at
 	`
 
 	err := r.db.QueryRow(ctx, query, user.Name, user.Email, user.Password).
-		Scan(&user.ID, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Name, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
-		// OLD: return myerrors.DBErrUserCreated
 		return repository.MapPgError("create user", err)
 	}
 
-	fmt.Println(myerrors.DBUserCreated)
+	fmt.Println(apperrors.DBUserCreated)
 
 	return nil
 }
@@ -53,10 +52,8 @@ func (r *postgresUserRepository) GetByID(ctx context.Context, id int64) (*model.
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			// OLD: return nil, myerrors.DBErrNotFound
-			return nil, fmt.Errorf("user %d: %w: %w", id, myerrors.ErrNotFound, err)
+			return nil, fmt.Errorf("user %d: %w: %w", id, apperrors.ErrNotFound, err)
 		}
-		// OLD: return nil, myerrors.DBErrUserNotRetrieved
 		return nil, fmt.Errorf("get user: %w", err)
 	}
 
@@ -77,10 +74,8 @@ func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			// OLD: return nil, myerrors.DBErrNotFound
-			return nil, fmt.Errorf("user with email %s: %w: %w", email, myerrors.ErrNotFound, err)
+			return nil, fmt.Errorf("user with email %s: %w: %w", email, apperrors.ErrNotFound, err)
 		}
-		// OLD: return nil, myerrors.DBErrUserNotRetrieved
 		return nil, fmt.Errorf("get user by email: %w", err)
 	}
 
@@ -100,10 +95,8 @@ func (r *postgresUserRepository) Update(ctx context.Context, user *model.User) e
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			// OLD: return myerrors.DBErrNotFound
-			return fmt.Errorf("user %d: %w: %w", user.ID, myerrors.ErrNotFound, err)
+			return fmt.Errorf("user %d: %w: %w", user.ID, apperrors.ErrNotFound, err)
 		}
-		// OLD: return myerrors.DBErrUserUpdated
 		return repository.MapPgError("update user", err)
 	}
 
@@ -115,15 +108,13 @@ func (r *postgresUserRepository) Delete(ctx context.Context, id int64) error {
 
 	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
-		// OLD: return fmt.Errorf("user can not deleted: %w", err)
 		return repository.MapPgError("delete user", err)
 	}
 
 	rowsAffected := result.RowsAffected()
 
 	if rowsAffected == 0 {
-		// OLD: return myerrors.DBErrNotFound
-		return fmt.Errorf("user %d: %w", id, myerrors.ErrNotFound)
+		return fmt.Errorf("user %d: %w", id, apperrors.ErrNotFound)
 	}
 
 	return nil
@@ -140,7 +131,6 @@ func (r *postgresUserRepository) List(ctx context.Context, limit, offset int) ([
 	rows, err := r.db.Query(ctx, query, limit, offset)
 
 	if err != nil {
-		// OLD: return nil, myerrors.DBErrUsersNotRetrieved
 		return nil, fmt.Errorf("list users: %w", err)
 	}
 
@@ -151,14 +141,12 @@ func (r *postgresUserRepository) List(ctx context.Context, limit, offset int) ([
 	for rows.Next() {
 		var u model.User
 		if err := rows.Scan(&u.ID, &u.Email, &u.Password, &u.CreatedAt, &u.UpdatedAt); err != nil {
-			// OLD: return nil, myerrors.DBErrUsersNotRetrieved
 			return nil, fmt.Errorf("list users: %w", err)
 		}
 		users = append(users, &u)
 	}
 
 	if err := rows.Err(); err != nil {
-		// OLD: return nil, myerrors.DBErrUsersNotRetrieved
 		return nil, fmt.Errorf("list users: %w", err)
 	}
 

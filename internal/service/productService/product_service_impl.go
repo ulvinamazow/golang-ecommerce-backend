@@ -86,7 +86,7 @@ func (productserviceImpl *productServiceImpl) List(ctx context.Context, limit, o
 
 	products, err := productserviceImpl.productRepo.List(ctx, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list products: %w", err)
+		return []*model.Product{}, fmt.Errorf("list products: %w", err)
 	}
 
 	return products, nil
@@ -100,13 +100,13 @@ func (productserviceImpl *productServiceImpl) ListByCategory(ctx context.Context
 	}
 
 	if categoryID == 0 {
-		return nil, fmt.Errorf("list products by category: %w", service.ErrCategoryNotFound)
+		return []*model.Product{}, fmt.Errorf("list products by category: %w", service.ErrCategoryNotFound)
 	}
 
 	products, err := productserviceImpl.productRepo.ListByCategory(ctx, categoryID, limit, offset)
 
 	if err != nil {
-		return nil, fmt.Errorf("list products by category: %w", err)
+		return []*model.Product{}, fmt.Errorf("list products by category: %w", err)
 	}
 
 	return products, nil
