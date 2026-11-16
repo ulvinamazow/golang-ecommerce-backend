@@ -8,10 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ulvinamazow/go-backend-project/internal/auth"
 	"github.com/ulvinamazow/go-backend-project/internal/config"
+	categoryhandler "github.com/ulvinamazow/go-backend-project/internal/handler/categoryHandler"
 	producthandler "github.com/ulvinamazow/go-backend-project/internal/handler/productHandler"
+	userhandler "github.com/ulvinamazow/go-backend-project/internal/handler/userHandler"
 	"github.com/ulvinamazow/go-backend-project/internal/middleware"
+	categoryrepository "github.com/ulvinamazow/go-backend-project/internal/repository/categoryRepository"
 	productrepository "github.com/ulvinamazow/go-backend-project/internal/repository/productRepository"
+	userrepository "github.com/ulvinamazow/go-backend-project/internal/repository/userRepository"
+	categoryservice "github.com/ulvinamazow/go-backend-project/internal/service/categoryService"
 	productservice "github.com/ulvinamazow/go-backend-project/internal/service/productService"
+	userservice "github.com/ulvinamazow/go-backend-project/internal/service/userService"
 )
 
 func main() {
@@ -38,17 +44,17 @@ func main() {
 
 	r.Use(gin.Logger(), gin.Recovery())
 
-	// userRepository := userrepository.NewPostgresUserRepository(connPool)
+	userRepository := userrepository.NewPostgresUserRepository(connPool)
 	productRepository := productrepository.NewPostgresProductRepository(connPool)
-	// categoryRepository := categoryrepository.NewPostgresCategoryRepository(connPool)
+	categoryRepository := categoryrepository.NewPostgresCategoryRepository(connPool)
 
-	// userService := userservice.NewUserService(userRepository)
+	userService := userservice.NewUserService(userRepository)
 	productService := productservice.NewProductService(productRepository)
-	// categoryService := categoryservice.NewCategoryService(categoryRepository)
+	categoryService := categoryservice.NewCategoryService(categoryRepository)
 
-	// userHandler := userhandler.NewUserHandler(userService)
+	userHandler := userhandler.NewUserHandler(userService)
 	productHandler := producthandler.NewProductHandler(productService)
-	// categoryHandler := categoryhandler.NewCategoryController(categoryService)
+	categoryHandler := categoryhandler.NewCategoryController(categoryService)
 
 	autCfg := auth.TokenConfig{
 		SecretKey: []byte(os.Getenv("JWT_SECRET_KEY")),
@@ -57,8 +63,6 @@ func main() {
 		TTL:       20 * time.Minute,
 	}
 
-	r.Use(middleware.AuthMiddleware(autCfg))
-
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
@@ -66,10 +70,19 @@ func main() {
 	})
 
 	r.GET("/", productHandler.ListProducts)
-	r.POST("/products", productHandler.CreateProduct)
-	r.PUT("/products/:id", productHandler.UpdateProduct)
-	r.DELETE("/products/:id", productHandler.DeleteProduct)
+	r.GET("/products", productHandler.ListProducts)
 	r.GET("/products/:id", productHandler.GetProductByID)
+
+	protected := r.Group("/")
+	protected.Use(middleware.AuthMiddleware(autCfg))
+	protected.POST("/products", productHandler.CreateProduct)
+	protected.PUT("/products/:id", productHandler.UpdateProduct)
+	protected.DELETE("/products/:id", productHandler.DeleteProduct)
+
+	protected.POST("/users", userHandler.CreateUser)
+	protected.GET("/users/:id", userHandler.GetUserByID)
+	protected.PUT("/users/:id", userHandler.UpdateUser)
+	protected.DELETE("/users/:id", userHandler.DeleteUser)
 
 	r.Run(":8080")
 

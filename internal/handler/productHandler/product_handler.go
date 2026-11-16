@@ -1,6 +1,7 @@
 package producthandler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -58,14 +59,16 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 // GET /products/:id
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
-	productID, err := middleware.GetUserID(c)
+	productID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		fmt.Println("error: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": handler.ErrInvalidInput.Error()})
 		return
 	}
 
-	product, err := h.productService.GetByID(c.Request.Context(), productID)
+	product, err := h.productService.GetByID(c.Request.Context(), int64(productID))
 	if err != nil {
+		fmt.Println("error: ", err)
 		respondError(c, err)
 		return
 	}

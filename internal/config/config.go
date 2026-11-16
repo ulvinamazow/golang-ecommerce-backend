@@ -17,7 +17,7 @@ type Config struct {
 }
 
 func LoadEnv() error {
-	err := godotenv.Load()
+	err := godotenv.Load("C:/Users/user/Desktop/go-backend-project/.env")
 	if err != nil {
 		fmt.Println(err.Error())
 		return err

@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ulvinamazow/go-backend-project/internal/model"
-	// OLD: "github.com/ulvinamazow/go-backend-project/internal/repository"
 	apperrors "github.com/ulvinamazow/go-backend-project/internal/errors"
+	"github.com/ulvinamazow/go-backend-project/internal/model"
 	productrepository "github.com/ulvinamazow/go-backend-project/internal/repository/productRepository"
 	"github.com/ulvinamazow/go-backend-project/internal/service"
 )
