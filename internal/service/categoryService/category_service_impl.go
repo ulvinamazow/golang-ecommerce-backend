@@ -22,23 +22,25 @@ func (categoryserviceImpl *categoryServiceImpl) Create(ctx context.Context, cate
 	err := validateCategory(category)
 
 	if err != nil {
-		return fmt.Errorf("%w: %w", service.ErrInvalidInput, err)
+		return fmt.Errorf("create category: %w", err)
 	}
 
-	categoryserviceImpl.categoryRepo.Create(ctx, category)
+	if err := categoryserviceImpl.categoryRepo.Create(ctx, category); err != nil {
+		return fmt.Errorf("create category: %w", err)
+	}
 
 	return nil
 }
 
 func (categoryserviceImpl *categoryServiceImpl) GetByID(ctx context.Context, id int64) (*model.Category, error) {
 	if id <= 0 {
-		return &model.Category{}, fmt.Errorf("%w: You cannot determine the id", service.ErrInvalidInput)
+		return &model.Category{}, fmt.Errorf("get category: %w", service.ErrInvalidInput)
 	}
 
 	category, err := categoryserviceImpl.categoryRepo.GetByID(ctx, id)
 
 	if err != nil {
-		return &model.Category{}, err
+		return &model.Category{}, fmt.Errorf("get category: %w", err)
 	}
 
 	return category, nil
@@ -47,11 +49,11 @@ func (categoryserviceImpl *categoryServiceImpl) GetByID(ctx context.Context, id 
 func (categoryserviceImpl *categoryServiceImpl) Update(ctx context.Context, category *model.Category) error {
 	err := validateCategory(category)
 	if err != nil {
-		return err
+		return fmt.Errorf("update category: %w", err)
 	}
 
 	if err = categoryserviceImpl.categoryRepo.Update(ctx, category); err != nil {
-		return err
+		return fmt.Errorf("update category: %w", err)
 	}
 
 	return nil
@@ -59,20 +61,20 @@ func (categoryserviceImpl *categoryServiceImpl) Update(ctx context.Context, cate
 
 func (categoryserviceImpl *categoryServiceImpl) Delete(ctx context.Context, categoryID, userID int64) error {
 	if categoryID <= 0 {
-		return fmt.Errorf("%w: You cannot determine the id", service.ErrInvalidInput)
+		return fmt.Errorf("delete category: %w", service.ErrInvalidInput)
 	}
 
 	category, err := categoryserviceImpl.categoryRepo.GetByID(ctx, categoryID)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete category: %w", err)
 	}
 
 	if category.Created_by != int(userID) {
-		return fmt.Errorf("authorization error")
+		return fmt.Errorf("delete category: %w", service.ErrForbidden)
 	}
 
 	if err = categoryserviceImpl.categoryRepo.Delete(ctx, categoryID); err != nil {
-		return err
+		return fmt.Errorf("delete category: %w", err)
 	}
 
 	return nil
@@ -88,13 +90,17 @@ func (categoryserviceImpl *categoryServiceImpl) List(ctx context.Context, limit,
 
 	categories, err := categoryserviceImpl.categoryRepo.List(ctx, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list categories: %w", err)
 	}
 
 	return categories, nil
 }
 
 func validateCategory(category *model.Category) error {
+	if category == nil {
+		return fmt.Errorf("%w: category can not be empty", service.ErrInvalidInput)
+	}
+
 	if strings.TrimSpace(category.Name) == "" {
 		return fmt.Errorf("%w: category name can not be empty", service.ErrInvalidInput)
 	}

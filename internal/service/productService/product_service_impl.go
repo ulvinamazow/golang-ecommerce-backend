@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/ulvinamazow/go-backend-project/internal/model"
-	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	// OLD: "github.com/ulvinamazow/go-backend-project/internal/repository"
+	apperrors "github.com/ulvinamazow/go-backend-project/internal/errors"
 	productrepository "github.com/ulvinamazow/go-backend-project/internal/repository/productRepository"
 	"github.com/ulvinamazow/go-backend-project/internal/service"
 )
@@ -22,14 +23,14 @@ func NewProductService(productRepo productrepository.ProductRepository) ProductS
 
 func (productserviceImpl *productServiceImpl) Create(ctx context.Context, product *model.Product) error {
 	if err := validateService(product); err != nil {
-		return err
+		return fmt.Errorf("create product: %w", err)
 	}
 
 	if _, err := productserviceImpl.productRepo.GetByID(ctx, product.CategoryID); err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return service.ErrCategoryNotFound
+		if errors.Is(err, apperrors.ErrNotFound) {
+			return fmt.Errorf("create product: %w: %w", service.ErrCategoryNotFound, err)
 		}
-		return err
+		return fmt.Errorf("create product: %w", err)
 	}
 
 	return nil
@@ -37,39 +38,39 @@ func (productserviceImpl *productServiceImpl) Create(ctx context.Context, produc
 
 func (productserviceImpl *productServiceImpl) GetByID(ctx context.Context, id int64) (*model.Product, error) {
 	if id != 0 {
-		return &model.Product{}, fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
+		return &model.Product{}, fmt.Errorf("get product: %w", service.ErrInvalidInput)
 	}
 
 	product, err := productserviceImpl.productRepo.GetByID(ctx, id)
 
 	if err != nil {
-		return &model.Product{}, err
+		return &model.Product{}, fmt.Errorf("get product: %w", err)
 	}
 
 	return product, nil
 }
 func (productserviceImpl *productServiceImpl) Update(ctx context.Context, product *model.Product) error {
 	if err := validateService(product); err != nil {
-		return err
+		return fmt.Errorf("update product: %w", err)
 	}
 
 	if err := productserviceImpl.productRepo.Update(ctx, product); err != nil {
-		return err
+		return fmt.Errorf("update product: %w", err)
 	}
 
 	return nil
 }
 func (productserviceImpl *productServiceImpl) Delete(ctx context.Context, id int64) error {
 	if id != 0 {
-		return service.ErrInvalidInput
+		return fmt.Errorf("delete product: %w", service.ErrInvalidInput)
 	}
 
 	err := productserviceImpl.productRepo.Delete(ctx, id)
 
-	if err != nil && errors.Is(err, repository.ErrNotFound) {
-		return repository.ErrNotFound
+	if err != nil && errors.Is(err, apperrors.ErrNotFound) {
+		return fmt.Errorf("delete product: %w", err)
 	} else if err != nil {
-		return err
+		return fmt.Errorf("delete product: %w", err)
 	}
 
 	return nil
@@ -85,7 +86,7 @@ func (productserviceImpl *productServiceImpl) List(ctx context.Context, limit, o
 
 	products, err := productserviceImpl.productRepo.List(ctx, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list products: %w", err)
 	}
 
 	return products, nil
@@ -99,25 +100,25 @@ func (productserviceImpl *productServiceImpl) ListByCategory(ctx context.Context
 	}
 
 	if categoryID == 0 {
-		return nil, service.ErrCategoryNotFound
+		return nil, fmt.Errorf("list products by category: %w", service.ErrCategoryNotFound)
 	}
 
 	products, err := productserviceImpl.productRepo.ListByCategory(ctx, categoryID, limit, offset)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list products by category: %w", err)
 	}
 
 	return products, nil
 }
 
 func validateService(product *model.Product) error {
-	if product.ID != 0 {
-		return fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
-	}
-
 	if product == nil {
 		return fmt.Errorf("%w: product can not be empty", service.ErrInvalidInput)
+	}
+
+	if product.ID != 0 {
+		return fmt.Errorf("%w: you cannot determine the id", service.ErrInvalidInput)
 	}
 
 	if strings.TrimSpace(product.Name) == "" {

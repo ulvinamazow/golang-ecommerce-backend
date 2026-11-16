@@ -1,8 +1,6 @@
 package producthandler
 
 import (
-	"errors"
-	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -106,7 +104,6 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// Mövcud obyekti dəyişirik ki, CategoryID kimi sahələr itməsin.
 	product.Name = req.Name
 	product.Description = req.Description
 	product.Price = req.Price
@@ -172,7 +169,6 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 		return
 	}
 
-	// null yox, boş massiv qaytarılsın.
 	responses := make([]*productresponsedto.ProductResponseDTO, 0, len(products))
 	for _, p := range products {
 		responses = append(responses, toResponse(p))
@@ -191,15 +187,5 @@ func toResponse(p *model.Product) *productresponsedto.ProductResponseDTO {
 	}
 }
 func respondError(c *gin.Context, err error) {
-	switch {
-	case errors.Is(err, handler.ErrNotFound):
-		c.JSON(http.StatusNotFound, gin.H{"error": handler.ErrNotFound.Error()})
-	case errors.Is(err, handler.ErrInvalidInput):
-		c.JSON(http.StatusBadRequest, gin.H{"error": handler.ErrInvalidInput.Error()})
-	case errors.Is(err, handler.ErrForbidden):
-		c.JSON(http.StatusForbidden, gin.H{"error": handler.ErrForbidden.Error()})
-	default:
-		slog.Error("product handler", "path", c.FullPath(), "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": handler.ErrInternal.Error()})
-	}
+	handler.RespondError(c, err)
 }

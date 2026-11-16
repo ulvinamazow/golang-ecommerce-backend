@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	apperrors "github.com/ulvinamazow/go-backend-project/internal/errors"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
 )
@@ -28,7 +29,8 @@ func (r *postgresProductRepository) Create(ctx context.Context, product *model.P
 	err := r.db.QueryRow(ctx, query, product.Name, product.Description, product.Price, product.CategoryID).
 		Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
 	if err != nil {
-		return fmt.Errorf("product can not be created: %w", err)
+		// OLD: return myerrors.DBErrProductCreated
+		return repository.MapPgError("create product", err)
 	}
 	return nil
 }
@@ -44,9 +46,9 @@ func (r *postgresProductRepository) GetByID(ctx context.Context, id int64) (*mod
 		Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategoryID, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repository.ErrNotFound
+			return nil, fmt.Errorf("product %d: %w: %w", id, apperrors.ErrNotFound, err)
 		}
-		return nil, fmt.Errorf("product could not be brought: %w", err)
+		return nil, fmt.Errorf("get product: %w", err)
 	}
 	return &p, nil
 }
@@ -62,9 +64,9 @@ func (r *postgresProductRepository) Update(ctx context.Context, product *model.P
 		Scan(&product.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return repository.ErrNotFound
+			return fmt.Errorf("product %d: %w: %w", product.ID, apperrors.ErrNotFound, err)
 		}
-		return fmt.Errorf("product can not be updated: %w", err)
+		return repository.MapPgError("update product", err)
 	}
 	return nil
 }
@@ -73,10 +75,10 @@ func (r *postgresProductRepository) Delete(ctx context.Context, id int64) error 
 	query := `DELETE FROM products WHERE id = $1`
 	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("product can not be deleted: %w", err)
+		return repository.MapPgError("delete product", err)
 	}
 	if result.RowsAffected() == 0 {
-		return repository.ErrNotFound
+		return fmt.Errorf("product %d: %w", id, apperrors.ErrNotFound)
 	}
 	return nil
 }
@@ -90,7 +92,7 @@ func (r *postgresProductRepository) List(ctx context.Context, limit, offset int)
 	`
 	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("the list of products could not be retrieved: %w", err)
+		return nil, fmt.Errorf("list products: %w", err)
 	}
 	defer rows.Close()
 
@@ -98,12 +100,12 @@ func (r *postgresProductRepository) List(ctx context.Context, limit, offset int)
 	for rows.Next() {
 		var p model.Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategoryID, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("error while reading products: %w", err)
+			return nil, fmt.Errorf("list products: %w", err)
 		}
 		products = append(products, &p)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error while processing products: %w", err)
+		return nil, fmt.Errorf("list products: %w", err)
 	}
 	return products, nil
 }
@@ -118,7 +120,7 @@ func (r *postgresProductRepository) ListByCategory(ctx context.Context, category
 	`
 	rows, err := r.db.Query(ctx, query, categoryID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving products by category: %w", err)
+		return nil, fmt.Errorf("list products by category: %w", err)
 	}
 	defer rows.Close()
 
@@ -126,12 +128,12 @@ func (r *postgresProductRepository) ListByCategory(ctx context.Context, category
 	for rows.Next() {
 		var p model.Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategoryID, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("error while reding products: %w", err)
+			return nil, fmt.Errorf("list products by category: %w", err)
 		}
 		products = append(products, &p)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error while processing product lines: %w", err)
+		return nil, fmt.Errorf("list products by category: %w", err)
 	}
 	return products, nil
 }

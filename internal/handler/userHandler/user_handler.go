@@ -18,14 +18,14 @@ func NewUserHandler(userService userservice.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-func (userHandler *UserHandler) CreateUser(c *gin.Context) error {
+func (userHandler *UserHandler) CreateUser(c *gin.Context) {
 	var req userrequestdto.UserRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": handler.ErrInvalidInput.Error(),
 		})
-		return c.Err()
+		return
 	}
 
 	user := model.User{
@@ -35,10 +35,11 @@ func (userHandler *UserHandler) CreateUser(c *gin.Context) error {
 	}
 
 	if err := userHandler.userService.Create(c.Request.Context(), &user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "email already exists",
+		err := handler.RespondError(c, err)
+		c.JSON(http.StatusConflict, gin.H{
+			"error": err.Error(),
 		})
-		return c.Err()
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -65,7 +66,9 @@ func (userHandler *UserHandler) UpdateUser(c *gin.Context) error {
 	}
 
 	if err := userHandler.userService.Update(c.Request.Context(), &user); err != nil {
-		switch {
-		}
+		// OLD: switch {
+		// OLD: }
+		return handler.RespondError(c, err)
 	}
+	return nil
 }

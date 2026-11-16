@@ -8,4 +8,6 @@ var (
 	ErrInvalidInput = errors.New("incorrect input data")
 
 	ErrCategoryNotFound = errors.New("The specified category does not exist")
+
+	ErrForbidden = errors.New("forbidden")
 )

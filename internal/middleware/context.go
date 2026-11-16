@@ -7,21 +7,19 @@ const (
 	ContextKeyRole   = "role"
 )
 
-func GetUserID(c *gin.Context) (string, error) {
+func GetUserID(c *gin.Context) (int64, error) {
 	value, exists := c.Get(ContextKeyUserID)
-
 	if !exists {
-		return "", ErrUserIDNotFound
+		return 0, ErrUserIDNotFound
 	}
 
-	userID, ok := value.(string)
-
+	userID, ok := value.(int64)
 	if !ok {
-		return "", ErrUserIDWrongType
+		return 0, ErrUserIDWrongType
 	}
 
-	if value == "" {
-		return "", ErrUserIDEmpty
+	if userID <= 0 {
+		return 0, ErrUserIDEmpty
 	}
 
 	return userID, nil
@@ -29,7 +27,6 @@ func GetUserID(c *gin.Context) (string, error) {
 
 func GetRole(c *gin.Context) (string, error) {
 	value, exists := c.Get(ContextKeyRole)
-
 	if !exists {
 		return "", ErrRoleNotFound
 	}
@@ -40,7 +37,7 @@ func GetRole(c *gin.Context) (string, error) {
 	}
 
 	if role == "" {
-		return "", ErrRoleNotFound
+		return "", ErrRoleEmpty
 	}
 
 	return role, nil

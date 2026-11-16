@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	apperrors "github.com/ulvinamazow/go-backend-project/internal/errors"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	"github.com/ulvinamazow/go-backend-project/internal/repository"
 )
@@ -28,7 +29,7 @@ func (r *postgresCategoryRepository) Create(ctx context.Context, category *model
 	err := r.db.QueryRow(ctx, query, category.Name).
 		Scan(&category.Name, &category.CreatedAt, &category.UpdatedAt)
 	if err != nil {
-		return fmt.Errorf("Category could not be created: %w", err)
+		return repository.MapPgError("create category", err)
 	}
 	return nil
 }
@@ -44,9 +45,9 @@ func (r *postgresCategoryRepository) GetByID(ctx context.Context, id int64) (*mo
 		Scan(&c.ID, &c.Name, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repository.ErrNotFound
+			return nil, fmt.Errorf("category %d: %w: %w", id, apperrors.ErrNotFound, err)
 		}
-		return nil, fmt.Errorf("category could not be retrieved: %w", err)
+		return nil, fmt.Errorf("get category: %w", err)
 	}
 	return &c, nil
 }
@@ -62,9 +63,9 @@ func (r *postgresCategoryRepository) Update(ctx context.Context, category *model
 		Scan(&category.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return repository.ErrNotFound
+			return fmt.Errorf("category %d: %w: %w", category.ID, apperrors.ErrNotFound, err)
 		}
-		return fmt.Errorf("category could not be updated: %w", err)
+		return repository.MapPgError("update category", err)
 	}
 	return nil
 }
@@ -73,10 +74,10 @@ func (r *postgresCategoryRepository) Delete(ctx context.Context, id int64) error
 	query := `DELETE FROM categories WHERE id = $1`
 	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("category could not be deleted: %w", err)
+		return repository.MapPgError("delete category", err)
 	}
 	if result.RowsAffected() == 0 {
-		return repository.ErrNotFound
+		return fmt.Errorf("category %d: %w", id, apperrors.ErrNotFound)
 	}
 	return nil
 }
@@ -90,7 +91,7 @@ func (r *postgresCategoryRepository) List(ctx context.Context, limit, offset int
 	`
 	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("list of categories could not be retrieved: %w", err)
+		return nil, fmt.Errorf("list categories: %w", err)
 	}
 	defer rows.Close()
 
@@ -98,12 +99,12 @@ func (r *postgresCategoryRepository) List(ctx context.Context, limit, offset int
 	for rows.Next() {
 		var c model.Category
 		if err := rows.Scan(&c.ID, &c.Name, &c.CreatedAt, &c.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("error while reading category sequence: %w", err)
+			return nil, fmt.Errorf("list categories: %w", err)
 		}
 		categories = append(categories, &c)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error while processing category ranges: %w", err)
+		return nil, fmt.Errorf("list categories: %w", err)
 	}
 	return categories, nil
 }

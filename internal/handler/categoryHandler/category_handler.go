@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	categoryrequestdto "github.com/ulvinamazow/go-backend-project/internal/DTO/request/categoryRequestDTO"
+	"github.com/ulvinamazow/go-backend-project/internal/handler"
+	"github.com/ulvinamazow/go-backend-project/internal/middleware"
 	"github.com/ulvinamazow/go-backend-project/internal/model"
 	categoryservice "github.com/ulvinamazow/go-backend-project/internal/service/categoryService"
 )
@@ -22,19 +24,19 @@ func (categoryHandler *CategoryHandler) CreateCategory(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": handler.ErrInvalidInput.Error()})
 		return
 	}
 
-	productID, _ := strconv.Atoi(c.Param("id"))
+	categoryID, _ := strconv.Atoi(c.Param("id"))
 
 	category := &model.Category{
-		ID:   int64(productID),
+		ID:   int64(categoryID),
 		Name: req.Name,
 	}
 
 	if err := categoryHandler.categoryService.Create(c.Request.Context(), category); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		handler.RespondError(c, err)
 		return
 	}
 
@@ -45,20 +47,34 @@ func (categoryHandler *CategoryHandler) DeleteCategory(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": handler.ErrInvalidInput.Error()})
 		return
 	}
 
-	productID, _ := strconv.Atoi(c.Param("id"))
+	categoryID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID format"})
+		return
+	}
 
-	userID, err := strconv.Atoi(c.GetHeader("user_id"))
+	userID, err := middleware.GetUserID(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	if err := categoryHandler.categoryService.Delete(c.Request.Context(), int64(productID), int64(userID)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "category can not deleted"})
+	category, err := categoryHandler.categoryService.GetByID(c.Request.Context(), int64(categoryID))
+	if err != nil {
+		handler.RespondError(c, err)
+		return
+	}
+	if int64(category.Created_by) != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not authorized to delete this category"})
+		return
+	}
+
+	if err := categoryHandler.categoryService.Delete(c.Request.Context(), int64(categoryID), int64(userID)); err != nil {
+		handler.RespondError(c, err)
 		return
 	}
 
@@ -69,24 +85,40 @@ func (categoryHandler *CategoryHandler) UpdateCategory(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": handler.ErrInvalidInput.Error()})
 		return
 	}
 
-	id, err := strconv.Atoi(c.GetHeader("user_id"))
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID"})
 		return
 	}
 
-	category := &model.Category{
-		ID:          int64(id),
+	userID, err := middleware.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid credentials"})
+		return
+	}
+
+	category, err := categoryHandler.categoryService.GetByID(c.Request.Context(), int64(id))
+	if err != nil {
+		handler.RespondError(c, err)
+		return
+	}
+
+	if int64(category.Created_by) != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not authorized to update this category"})
+		return
+	}
+
+	category = &model.Category{
 		Name:        req.Name,
 		Description: req.Description,
 	}
 
 	if err := categoryHandler.categoryService.Update(c.Request.Context(), category); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "category can not updated"})
+		handler.RespondError(c, err)
 		return
 	}
 
@@ -97,15 +129,15 @@ func (categoryHandler *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	var req categoryrequestdto.CategoryRequestDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": handler.ErrInvalidInput.Error()})
 		return
 	}
 
-	id, _ := strconv.Atoi(c.Param("id"))
+	categoryID, _ := strconv.Atoi(c.Param("id"))
 
-	category, err := categoryHandler.categoryService.GetByID(c.Request.Context(), int64(id))
+	category, err := categoryHandler.categoryService.GetByID(c.Request.Context(), int64(categoryID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "category can not retrieved"})
+		handler.RespondError(c, err)
 		return
 	}
 
@@ -125,7 +157,7 @@ func (categoryHandler *CategoryHandler) ListCategories(c *gin.Context) {
 
 	categories, err := categoryHandler.categoryService.List(c.Request.Context(), limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "categories can not retrieved"})
+		handler.RespondError(c, err)
 		return
 	}
 

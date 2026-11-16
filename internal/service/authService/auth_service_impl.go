@@ -7,7 +7,8 @@ import (
 	"strconv"
 
 	"github.com/ulvinamazow/go-backend-project/internal/auth"
-	"github.com/ulvinamazow/go-backend-project/internal/repository"
+	// OLD: "github.com/ulvinamazow/go-backend-project/internal/repository"
+	"github.com/ulvinamazow/go-backend-project/internal/errors"
 	userrepository "github.com/ulvinamazow/go-backend-project/internal/repository/userRepository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -30,17 +31,20 @@ func NewAuthService(
 func (authserviceImpl *authServiceImpl) Login(ctx context.Context, email, password string) (string, error) {
 	user, err := authserviceImpl.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return "", ErrInvalidCredentials
+		if errors.Is(err, apperrors.ErrNotFound) {
+			// OLD: return "", ErrInvalidCredentials
+			return "", fmt.Errorf("login user: %w: %w", ErrInvalidCredentials, err)
 		}
-		return "", fmt.Errorf("error while login: %w", err)
+		// OLD: return "", fmt.Errorf("error while login: %w", err)
+		return "", fmt.Errorf("login user: %w", err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
 		[]byte(password),
 	); err != nil {
-		return "", ErrInvalidCredentials
+		// OLD: return "", ErrInvalidCredentials
+		return "", fmt.Errorf("login user: %w: %w", ErrInvalidCredentials, err)
 	}
 
 	userID := strconv.Itoa(int(user.ID))
@@ -48,7 +52,8 @@ func (authserviceImpl *authServiceImpl) Login(ctx context.Context, email, passwo
 	token, err := auth.GenerateAccessToken(authserviceImpl.tokenCfg, userID, user.Role)
 
 	if err != nil {
-		return "", fmt.Errorf("token could not be created: %w", err)
+		// OLD: return "", fmt.Errorf("token could not be created: %w", err)
+		return "", fmt.Errorf("create access token: %w", err)
 	}
 
 	return token, nil
